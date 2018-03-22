@@ -126,6 +126,24 @@ class Retriever implements RetrieverInterface
             throw new WebResourceException($response, $request);
         }
 
+        $modelClassName = $this->getModelClassNameFromContentTypeWithContentTypeVerification($request, $response);
+
+        return new $modelClassName($response, $request->getUri());
+    }
+
+    /**
+     * @param RequestInterface $request
+     * @param ResponseInterface $response
+     *
+     * @return string
+     *
+     * @throws InternetMediaTypeParseException
+     * @throws InvalidContentTypeException
+     */
+    private function getModelClassNameFromContentTypeWithContentTypeVerification(
+        RequestInterface $request,
+        ResponseInterface $response
+    ) {
         $contentType = $this->getContentTypeFromResponse($response);
         $modelClassName = $this->getModelClassNameForContentType($contentType);
         $hasContentTypeSpecificModel = $modelClassName !== WebResource::class;
@@ -134,7 +152,7 @@ class Retriever implements RetrieverInterface
             throw new InvalidContentTypeException($contentType, $response, $request);
         }
 
-        return new $modelClassName($response, $request->getUri());
+        return $modelClassName;
     }
 
     /**
@@ -175,13 +193,7 @@ class Retriever implements RetrieverInterface
             return null;
         }
 
-        $contentType = $this->getContentTypeFromResponse($response);
-        $modelClassName = $this->getModelClassNameForContentType($contentType);
-        $hasContentTypeSpecificModel = $modelClassName !== WebResource::class;
-
-        if (!$hasContentTypeSpecificModel && !$this->allowUnknownResourceTypes) {
-            throw new InvalidContentTypeException($contentType, $response, $request);
-        }
+        $this->getModelClassNameFromContentTypeWithContentTypeVerification($request, $response);
 
         return true;
     }
